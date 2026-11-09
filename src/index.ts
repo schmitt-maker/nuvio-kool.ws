@@ -168,33 +168,35 @@ app.get("/", async (req, res) => {
 </html>`);
 });
 
-// Start listening
-const server = app.listen(config.port, config.host, () => {
-  logger.info(`🚀 Kool.ws Addon is running at http://${config.host}:${config.port}`);
-  logger.info(`📋 Stremio Manifest URL: ${config.baseUrl}/manifest.json`);
-});
-
-server.on("error", (err: any) => {
-  if (err.code === "EADDRINUSE") {
-    logger.error(`❌ Port ${config.port} is already in use (EADDRINUSE).`);
-    logger.error(`Sur macOS, les ports 5000 et 7000 sont réservés par AirPlay Receiver.`);
-    logger.error(`Vous pouvez spécifier un autre port avec: PORT=7080 npm start`);
-  } else {
-    logger.error("Server error:", err);
-  }
-  process.exit(1);
-});
-
-// Handle graceful shutdown
-const shutdown = () => {
-  logger.info("Shutting down gracefully...");
-  server.close(() => {
-    logger.info("Server closed.");
-    process.exit(0);
+// Start listening if not running in a serverless environment (e.g. Vercel)
+if (!process.env.VERCEL) {
+  const server = app.listen(config.port, config.host, () => {
+    logger.info(`🚀 Kool.ws Addon is running at http://${config.host}:${config.port}`);
+    logger.info(`📋 Stremio Manifest URL: ${config.baseUrl}/manifest.json`);
   });
-};
 
-process.on("SIGTERM", shutdown);
-process.on("SIGINT", shutdown);
+  server.on("error", (err: any) => {
+    if (err.code === "EADDRINUSE") {
+      logger.error(`❌ Port ${config.port} is already in use (EADDRINUSE).`);
+      logger.error(`Sur macOS, les ports 5000 et 7000 sont réservés par AirPlay Receiver.`);
+      logger.error(`Vous pouvez spécifier un autre port avec: PORT=7080 npm start`);
+    } else {
+      logger.error("Server error:", err);
+    }
+    process.exit(1);
+  });
+
+  // Handle graceful shutdown
+  const shutdown = () => {
+    logger.info("Shutting down gracefully...");
+    server.close(() => {
+      logger.info("Server closed.");
+      process.exit(0);
+    });
+  };
+
+  process.on("SIGTERM", shutdown);
+  process.on("SIGINT", shutdown);
+}
 
 export default app;
