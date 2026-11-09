@@ -225,6 +225,24 @@ async function runTests() {
     }
   });
 
+  // Test 14: Channel Logo Resolution
+  await assertTest("Résolution des vrais logos de chaînes (TF1, DAZN, M6)", async () => {
+    const metasTf1 = await liveProvider.getCatalog(undefined, "TF1");
+    if (!metasTf1 || metasTf1.length === 0) throw new Error("TF1 non trouvé");
+    const tf1Item = metasTf1[0];
+    if (!tf1Item.poster || tf1Item.poster.includes("flagcdn.com")) {
+      throw new Error(`TF1 devrait avoir un vrai logo, reçu : ${tf1Item.poster}`);
+    }
+
+    const metasSport = await liveProvider.getCatalog(undefined, undefined, ["France Sport"]);
+    const daznItem = metasSport.find((m) => m.name.toUpperCase().includes("DAZN"));
+    if (!daznItem) throw new Error("Chaîne DAZN introuvable dans France Sport");
+    if (!daznItem.poster || daznItem.poster.includes("flagcdn.com")) {
+      throw new Error(`DAZN devrait avoir un vrai logo, reçu : ${daznItem.poster}`);
+    }
+  });
+
+
   console.log("==========================================");
   console.log(`Résultats : ${passed} passés, ${failed} échoués`);
   console.log("==========================================");

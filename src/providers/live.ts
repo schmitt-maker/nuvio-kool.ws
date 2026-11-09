@@ -3,8 +3,10 @@ import { KoolLiveChannel } from "../types/kool";
 import { StremioMetaItem, StremioStream } from "../types/stremio";
 import { logger } from "../utils/logger";
 import { COUNTRY_FLAGS, ALL_CATEGORY_IDS } from "../config/categories";
+import { logoResolver } from "./logo-resolver";
 
 const DEFAULT_TV_ICON = "https://img.icons8.com/color/452/dog.png";
+
 
 
 /**
@@ -43,7 +45,8 @@ export function formatChannelMeta(channel: KoolLiveChannel): StremioMetaItem {
   const tags = channel.tags || [];
   const primaryTag = tags[0] || "TV";
   const channelId = `kool:live:${channel.id}`;
-  const poster = (primaryTag && COUNTRY_FLAGS[primaryTag]) || DEFAULT_TV_ICON;
+  const realLogo = logoResolver.getLogo(channel);
+  const poster = realLogo || (primaryTag && COUNTRY_FLAGS[primaryTag]) || DEFAULT_TV_ICON;
 
   return {
     id: channelId,
@@ -51,6 +54,7 @@ export function formatChannelMeta(channel: KoolLiveChannel): StremioMetaItem {
     name: channel.name,
     poster,
     posterShape: "landscape",
+    logo: realLogo || undefined,
     genres: tags,
     description,
     releaseInfo: primaryTag,
