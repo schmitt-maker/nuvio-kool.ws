@@ -98,3 +98,9 @@ export interface StremioStream {
 export interface StremioStreamResponse {
   streams: StremioStream[];
 }
+
+export interface AddonUserConfig {
+  home: boolean;
+  categories?: string[];
+}
+

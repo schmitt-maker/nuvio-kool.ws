@@ -27,10 +27,13 @@ Intégration native, propre et performante de **Kool.ws** pour **Nuvio TV** (And
 - **Moteur `clientFetch` récursif** pour résoudre les hébergeurs tiers (Voe, Vidsonic, etc.) sans navigateur lourd.
 - **Mini-proxy de streaming** assurant la continuité des flux protégés par `Referer`.
 
-### 3. Expérience TV Native (10-foot Leanback)
-- Navigation au **D-pad / télécommande** fluide et réactive.
-- Lecture directe via les moteurs matériels natifs de Nuvio TV (**ExoPlayer** et **MPV**).
-- Support de la directive standard `behaviorHints.proxyHeaders`.
+### 3. Configurateur Web & 2 URLs d'Installation
+Ouvrez simplement l'adresse de votre addon dans un navigateur (`https://votre-domaine.vercel.app/` ou `http://localhost:7080`) pour accéder au **configurateur visuel interactif** :
+- **🌟 URL 1 : Avec page d'accueil** (`/manifest.json` ou `/:config/manifest.json`)
+  - Affiche la rangée *Kool Live TV* directement sur l'écran d'accueil et le menu Découvrir de Nuvio / Stremio.
+- **⚡ URL 2 : Sans page d'accueil** (`/no-home/manifest.json` ou `/:config/manifest.json`)
+  - Ne crée aucun bandeau sur l'écran d'accueil pour garder votre interface épurée, tout en conservant les flux VOD films & séries actifs.
+- **🎯 Filtrage des Catégories** : Cochez/décochez les catégories souhaitées parmi les 17 disponibles (France, France Sport, UK, Allemagne, Espagne, etc.) ou utilisez le preset rapide *« France & Sport uniquement »*. Les 2 URLs se mettent à jour automatiquement en temps réel !
 
 ---
 
@@ -52,23 +55,25 @@ npm start
 docker compose up -d
 ```
 
-Consultez le fichier **[SETUP.md](SETUP.md)** pour le guide complet de déploiement gratuit sur **Vercel** ou **Koyeb**.
+Consultez le fichier **[SETUP.md](SETUP.md)** pour le guide complet de déploiement gratuit sur **Vercel**.
 
 ---
 
-## 📡 URL du Manifeste
+## 📡 URLs du Manifeste
 
-Une fois le serveur démarré ou hébergé, ajoutez l'URL suivante dans les paramètres de votre application **Nuvio TV** ou **Stremio** :
+Selon votre préférence, vous pouvez ajouter l'une des 2 URLs suivantes dans **Nuvio TV** ou **Stremio** :
 
-```
-http://<VOTRE_HOTE>:7080/manifest.json
-```
+| Mode | URL du Manifeste | Description |
+| :--- | :--- | :--- |
+| **Avec Accueil** | `http://<VOTRE_HOTE>:7080/manifest.json` | Chaînes Live TV sur l'écran d'accueil + VOD |
+| **Sans Accueil** | `http://<VOTRE_HOTE>:7080/no-home/manifest.json` | Accueil épuré + VOD Films & Séries uniquement |
+| **Personnalisé** | `http://<VOTRE_HOTE>:7080/<CONFIG>/manifest.json` | Généré en direct depuis le configurateur web |
 
 ---
 
 ## 🧪 Tests d'Intégration
 
-Une suite de tests automatisée vérifie en continu la connectivité avec les API de Kool.ws :
+Une suite de tests automatisée vérifie en continu la connectivité avec les API de Kool.ws, le parseur de configuration et la génération du manifest :
 
 ```bash
 npm test
@@ -86,8 +91,13 @@ npm test
 ⏳ Récupération des sources VOD Série (Breaking Bad S01E01)... ✅ OK
 ⏳ Provider Stremio Live TV : formatage catalogue... ✅ OK
 ⏳ Provider Stremio VOD : génération des streams... ✅ OK
+⏳ Parseur de configuration utilisateur... ✅ OK
+⏳ Génération du Manifest (Avec vs Sans page d'accueil)... ✅ OK
+⏳ Génération du Manifest (Catégories filtrées)... ✅ OK
+⏳ Provider Live TV avec filtre de catégories utilisateur... ✅ OK
+⏳ Serveur HTTP : routes /manifest.json, /no-home/manifest.json et landing page... ✅ OK
 ==========================================
-Résultats : 8 passés, 0 échoués
+Résultats : 13 passés, 0 échoués
 ==========================================
 ```
 
@@ -98,29 +108,32 @@ Résultats : 8 passés, 0 échoués
 ```
 nuvio-kool.ws/
 ├── src/
-│   ├── index.ts              # Serveur Express, page d'accueil & gestion des signaux
+│   ├── index.ts              # Serveur Express & point d'entrée
 │   ├── config.ts             # Ports, timeouts et TTLs de cache
+│   ├── config/
+│   │   └── categories.ts     # Définition des 17 catégories et métadonnées de drapeaux
 │   ├── types/
 │   │   ├── kool.ts           # Modélisation du protocole mHub v2 / MediaHubMX
-│   │   └── stremio.ts        # Modélisation du protocole Stremio Addon
+│   │   └── stremio.ts        # Modélisation du protocole Stremio Addon & UserConfig
 │   ├── kool-client/
 │   │   ├── client.ts         # Client HTTP pour l'API Kool.ws
 │   │   └── client-fetch.ts   # Moteur de résolution distribué clientFetch
 │   ├── providers/
-│   │   ├── live.ts           # Transformation du catalogue Live TV & guide EPG
+│   │   ├── live.ts           # Transformation Live TV & filtrage par catégories
 │   │   └── vod.ts            # Fournisseur de flux VOD classés par langue
 │   ├── server/
-│   │   └── routes.ts         # Endpoints Stremio & routeur proxy HLS
+│   │   ├── landing-page.ts   # Page web interactive du configurateur
+│   │   └── routes.ts         # Endpoints Stremio (Manifest, Catalog, Meta, Stream)
 │   └── utils/
 │       ├── cache.ts          # Cache mémoire TTL haute performance
 │       └── logger.ts         # Journalisation structurée
 ├── test/
-│   └── addon.test.ts         # Suite de tests d'intégration automatisés
+│   └── addon.test.ts         # Suite de 13 tests d'intégration automatisés
 ├── api/
 │   └── index.ts              # Adaptateur Serverless pour Vercel
 ├── Dockerfile                # Image conteneur multi-stage alpine ultra-légère
 ├── docker-compose.yml        # Déploiement en 1 commande
-├── SETUP.md                  # Guide de déploiement pas-à-pas (HF Spaces, Vercel, TV)
+├── SETUP.md                  # Guide de déploiement pas-à-pas sur Vercel
 ├── LICENSE                   # Licence MIT
 └── README.md
 ```

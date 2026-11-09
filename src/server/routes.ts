@@ -1,78 +1,160 @@
 import { Router, Request, Response } from "express";
-import { StremioManifest } from "../types/stremio";
+import { StremioManifest, AddonUserConfig } from "../types/stremio";
 import { liveProvider } from "../providers/live";
 import { vodProvider } from "../providers/vod";
 import { koolClient } from "../kool-client/client";
 import { logger } from "../utils/logger";
 import { config } from "../config";
+import { ALL_CATEGORY_IDS } from "../config/categories";
+import { renderLandingPage } from "./landing-page";
 
 export const stremioRouter = Router();
 
-const manifest: StremioManifest = {
-  id: "org.koolws.nuvio",
-  version: "1.0.0",
-  name: "Kool.ws (Live TV & VOD)",
-  description:
-    "300+ Live TV Channels (France, Sport, International) with EPG & Movies / Series sources from Kool.ws",
-  logo: "https://img.icons8.com/color/452/dog.png",
-  background: "https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85",
-  resources: [
-    {
-      name: "catalog",
-      types: ["tv"],
-      idPrefixes: ["kool:live:"]
-    },
-    {
-      name: "meta",
-      types: ["tv"],
-      idPrefixes: ["kool:live:"]
-    },
-    {
-      name: "stream",
-      types: ["tv", "movie", "series"],
-      idPrefixes: ["kool:live:", "tt", "tmdb:"]
-    }
-  ],
-  types: ["tv", "movie", "series"],
-  catalogs: [
-    {
-      type: "tv",
-      id: "kool_live_tv",
-      name: "Kool Live TV",
-      extra: [
-        {
-          name: "genre",
-          isRequired: false,
-          options: [
-            "France",
-            "France Sport",
-            "Germany",
-            "United Kingdom",
-            "Spain",
-            "Italy",
-            "Turkey",
-            "Arabia",
-            "Portugal",
-            "Netherlands",
-            "Poland",
-            "Russia"
-          ]
-        },
-        {
-          name: "search",
-          isRequired: false
-        }
-      ]
-    }
-  ],
-  idPrefixes: ["kool:live:", "tt", "tmdb:"]
-};
+/**
+ * Resolves the public base URL dynamically from the incoming HTTP request
+ * or from the BASE_URL environment variable if set.
+ */
+export function getBaseUrl(req: Request): string {
+  if (process.env.BASE_URL) {
+    return process.env.BASE_URL.replace(/\/$/, "");
+  }
+  const host = req.get("host") || `localhost:${config.port}`;
+  const proto = (req.headers["x-forwarded-proto"] as string) || req.protocol || "http";
+  return `${proto}://${host}`;
+}
 
-// 1. Manifest
-stremioRouter.get("/manifest.json", (_req: Request, res: Response) => {
-  res.setHeader("Cache-Control", "max-age=86400, public");
-  res.json(manifest);
-});
+/**
+ * Parses user configuration from path slug (e.g. base64url or "no-home")
+ * or query parameters.
+ */
+export function parseUserConfig(configRaw?: string, query?: any): AddonUserConfig {
+  const isNoHomeSlug = configRaw === "no-home" || query?.home === "false" || query?.home === "0";
+
+  let home = !isNoHomeSlug;
+  let categories: string[] | undefined = undefined;
+
+  // Try decoding base64url or JSON
+  if (configRaw && configRaw !== "no-home" && configRaw !== "home") {
+    try {
+      const decoded = Buffer.from(configRaw, "base64url").toString("utf-8");
+      if (decoded.startsWith("{") && decoded.endsWith("}")) {
+        const parsed = JSON.parse(decoded);
+        if (typeof parsed.home === "boolean") {
+          home = parsed.home;
+        }
+        if (Array.isArray(parsed.categories) && parsed.categories.length > 0) {
+          categories = parsed.categories;
+        }
+      }
+    } catch {
+      // Fallback: URLSearchParams
+      try {
+        const params = new URLSearchParams(configRaw);
+        if (params.has("home")) {
+          home = params.get("home") !== "0" && params.get("home") !== "false";
+        }
+        const catsRaw = params.get("cats") || params.get("categories");
+        if (catsRaw) {
+          categories = catsRaw.split(",").map((c) => c.trim()).filter(Boolean);
+        }
+      } catch {
+        // ignore
+      }
+    }
+  }
+
+  // Check query params overrides
+  if (query) {
+    if (query.home === "false" || query.home === "0") {
+      home = false;
+    } else if (query.home === "true" || query.home === "1") {
+      home = true;
+    }
+    const catsQuery = query.cats || query.categories;
+    if (typeof catsQuery === "string") {
+      categories = catsQuery.split(",").map((c: string) => c.trim()).filter(Boolean);
+    }
+  }
+
+  return { home, categories };
+}
+
+/**
+ * Builds the Stremio manifest dynamically based on user configuration.
+ */
+export function getManifest(baseUrl: string, userConfig: AddonUserConfig): StremioManifest {
+  const isHomeEnabled = userConfig.home !== false;
+  const categories = userConfig.categories && userConfig.categories.length > 0
+    ? userConfig.categories
+    : ALL_CATEGORY_IDS;
+
+  return {
+    id: isHomeEnabled ? "org.koolws.nuvio" : "org.koolws.nuvio.nohome",
+    version: "1.0.0",
+    name: isHomeEnabled ? "Kool.ws (Live TV & VOD)" : "Kool.ws (VOD)",
+    description: isHomeEnabled
+      ? `300+ Chaînes Live TV (${categories.length} catégories) avec EPG & Sources VOD Kool.ws`
+      : "Sources VOD Kool.ws pour Films & Séries (Mode discret sans catalogue d'accueil)",
+    logo: "https://img.icons8.com/color/452/dog.png",
+    background: "https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85",
+    behaviorHints: {
+      configurable: true,
+      configurationRequired: false
+    },
+    resources: isHomeEnabled
+      ? [
+          {
+            name: "catalog",
+            types: ["tv"],
+            idPrefixes: ["kool:live:"]
+          },
+          {
+            name: "meta",
+            types: ["tv"],
+            idPrefixes: ["kool:live:"]
+          },
+          {
+            name: "stream",
+            types: ["tv", "movie", "series"],
+            idPrefixes: ["kool:live:", "tt", "tmdb:"]
+          }
+        ]
+      : [
+          {
+            name: "meta",
+            types: ["tv"],
+            idPrefixes: ["kool:live:"]
+          },
+          {
+            name: "stream",
+            types: ["tv", "movie", "series"],
+            idPrefixes: ["kool:live:", "tt", "tmdb:"]
+          }
+        ],
+    types: ["tv", "movie", "series"],
+    catalogs: isHomeEnabled
+      ? [
+          {
+            type: "tv",
+            id: "kool_live_tv",
+            name: "Kool Live TV",
+            extra: [
+              {
+                name: "genre",
+                isRequired: false,
+                options: categories
+              },
+              {
+                name: "search",
+                isRequired: false
+              }
+            ]
+          }
+        ]
+      : [],
+    idPrefixes: ["kool:live:", "tt", "tmdb:"]
+  };
+}
 
 // Helper to parse extra path parameters (e.g. "genre=France&search=TF1.json")
 function parseExtraParams(extraRaw?: string): { genre?: string; search?: string } {
@@ -92,33 +174,50 @@ function parseExtraParams(extraRaw?: string): { genre?: string; search?: string 
   return params;
 }
 
+// 1. Manifest routes
+const manifestPaths = ["/manifest.json", "/:config/manifest.json"];
+stremioRouter.get(manifestPaths, (req: Request, res: Response) => {
+  const configParam = Array.isArray(req.params.config) ? req.params.config[0] : req.params.config;
+  const userConfig = parseUserConfig(configParam, req.query);
+  const manifest = getManifest(getBaseUrl(req), userConfig);
+
+  res.setHeader("Cache-Control", "max-age=3600, public");
+  res.json(manifest);
+});
+
 // 2. Catalog routes
-stremioRouter.get(
-  ["/catalog/:type/:id.json", "/catalog/:type/:id/:extra"],
-  async (req: Request, res: Response) => {
-    const type = Array.isArray(req.params.type) ? req.params.type[0] : req.params.type;
-    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-    const extra = Array.isArray(req.params.extra) ? req.params.extra[0] : req.params.extra;
+const catalogPaths = [
+  "/catalog/:type/:id.json",
+  "/:config/catalog/:type/:id.json",
+  "/catalog/:type/:id/:extra",
+  "/:config/catalog/:type/:id/:extra"
+];
+stremioRouter.get(catalogPaths, async (req: Request, res: Response) => {
+  const type = Array.isArray(req.params.type) ? req.params.type[0] : req.params.type;
+  const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  const extra = Array.isArray(req.params.extra) ? req.params.extra[0] : req.params.extra;
+  const configParam = Array.isArray(req.params.config) ? req.params.config[0] : req.params.config;
+  const userConfig = parseUserConfig(configParam, req.query);
 
-    if (type !== "tv" || id !== "kool_live_tv") {
-      res.json({ metas: [] });
-      return;
-    }
-
-    try {
-      const { genre, search } = parseExtraParams(extra);
-      const metas = await liveProvider.getCatalog(genre, search);
-      res.setHeader("Cache-Control", "max-age=300, public");
-      res.json({ metas });
-    } catch (err: any) {
-      logger.error(`Error in /catalog route: ${err.message}`);
-      res.json({ metas: [] });
-    }
+  if (type !== "tv" || id !== "kool_live_tv" || userConfig.home === false) {
+    res.json({ metas: [] });
+    return;
   }
-);
 
-// 3. Meta route (for channel details)
-stremioRouter.get("/meta/:type/:id.json", async (req: Request, res: Response) => {
+  try {
+    const { genre, search } = parseExtraParams(extra);
+    const metas = await liveProvider.getCatalog(genre, search, userConfig.categories);
+    res.setHeader("Cache-Control", "max-age=300, public");
+    res.json({ metas });
+  } catch (err: any) {
+    logger.error(`Error in /catalog route: ${err.message}`);
+    res.json({ metas: [] });
+  }
+});
+
+// 3. Meta routes (for channel details)
+const metaPaths = ["/meta/:type/:id.json", "/:config/meta/:type/:id.json"];
+stremioRouter.get(metaPaths, async (req: Request, res: Response) => {
   const type = Array.isArray(req.params.type) ? req.params.type[0] : req.params.type;
   const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const cleanedId = (rawId || "").replace(/\.json$/, "");
@@ -142,21 +241,9 @@ stremioRouter.get("/meta/:type/:id.json", async (req: Request, res: Response) =>
   }
 });
 
-/**
- * Resolves the public base URL dynamically from the incoming HTTP request
- * or from the BASE_URL environment variable if set.
- */
-function getBaseUrl(req: Request): string {
-  if (process.env.BASE_URL) {
-    return process.env.BASE_URL.replace(/\/$/, "");
-  }
-  const host = req.get("host") || `localhost:${config.port}`;
-  const proto = (req.headers["x-forwarded-proto"] as string) || req.protocol || "http";
-  return `${proto}://${host}`;
-}
-
 // 4. Stream routes
-stremioRouter.get("/stream/:type/:id.json", async (req: Request, res: Response) => {
+const streamPaths = ["/stream/:type/:id.json", "/:config/stream/:type/:id.json"];
+stremioRouter.get(streamPaths, async (req: Request, res: Response) => {
   const type = Array.isArray(req.params.type) ? req.params.type[0] : req.params.type;
   const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const cleanedId = (rawId || "").replace(/\.json$/, "");
@@ -185,7 +272,8 @@ stremioRouter.get("/stream/:type/:id.json", async (req: Request, res: Response) 
 });
 
 // 5. On-demand VOD resolver & playback endpoint
-stremioRouter.get("/play/vod", async (req: Request, res: Response) => {
+const playPaths = ["/play/vod", "/:config/play/vod"];
+stremioRouter.get(playPaths, async (req: Request, res: Response) => {
   const sourceUrl = req.query.sourceUrl as string;
   const baseUrl = getBaseUrl(req);
 
@@ -223,8 +311,9 @@ stremioRouter.get("/play/vod", async (req: Request, res: Response) => {
   }
 });
 
-// 6. Streaming proxy endpoint (for streams requiring custom headers or IP-proxying)
-stremioRouter.get("/proxy/stream", async (req: Request, res: Response) => {
+// 6. Streaming proxy endpoint
+const proxyPaths = ["/proxy/stream", "/:config/proxy/stream"];
+stremioRouter.get(proxyPaths, async (req: Request, res: Response) => {
   const targetUrl = req.query.url as string;
   const rawHeaders = req.query.headers as string;
 
@@ -286,4 +375,53 @@ stremioRouter.get("/proxy/stream", async (req: Request, res: Response) => {
       res.status(500).send("Proxy error");
     }
   }
+});
+
+// 7. Status / Diagnostic endpoint
+stremioRouter.get(["/status", "/health"], (req: Request, res: Response) => {
+  const baseUrl = getBaseUrl(req);
+  res.json({
+    addon: "kool.ws-addon",
+    status: "online",
+    version: "1.0.0",
+    manifestHome: `${baseUrl}/manifest.json`,
+    manifestNoHome: `${baseUrl}/no-home/manifest.json`,
+    categoriesAvailable: ALL_CATEGORY_IDS.length
+  });
+});
+
+// 8. Interactive Configuration & Landing page
+const landingPaths = ["/", "/configure", "/:config/configure", "/:config"];
+stremioRouter.get(landingPaths, (req: Request, res: Response, next: any) => {
+  const configParam = Array.isArray(req.params.config) ? req.params.config[0] : req.params.config;
+
+  // Let static / well-known files pass through if needed
+  if (configParam && (configParam.endsWith(".json") || configParam.endsWith(".ico") || configParam.endsWith(".png"))) {
+    return next();
+  }
+
+  const baseUrl = getBaseUrl(req);
+
+  // If programmatic JSON requested from root
+  if (
+    req.path === "/" &&
+    req.headers.accept &&
+    req.headers.accept.includes("application/json") &&
+    !req.headers.accept.includes("text/html")
+  ) {
+    res.json({
+      addon: "kool.ws-addon",
+      version: "1.0.0",
+      description: "Kool.ws Live TV and VOD streams for Stremio and Nuvio TV",
+      manifestHome: `${baseUrl}/manifest.json`,
+      manifestNoHome: `${baseUrl}/no-home/manifest.json`
+    });
+    return;
+  }
+
+  const userConfig = parseUserConfig(configParam, req.query);
+  const html = renderLandingPage(baseUrl, userConfig);
+
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.send(html);
 });

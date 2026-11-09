@@ -2,30 +2,10 @@ import { koolClient } from "../kool-client/client";
 import { KoolLiveChannel } from "../types/kool";
 import { StremioMetaItem, StremioStream } from "../types/stremio";
 import { logger } from "../utils/logger";
+import { COUNTRY_FLAGS, ALL_CATEGORY_IDS } from "../config/categories";
 
 const DEFAULT_TV_ICON = "https://img.icons8.com/color/452/dog.png";
 
-/**
- * Flag icons map for TV channel landscape cards
- */
-const COUNTRY_FLAGS: Record<string, string> = {
-  "France": "https://flagcdn.com/w320/fr.png",
-  "France Sport": "https://flagcdn.com/w320/fr.png",
-  "Germany": "https://flagcdn.com/w320/de.png",
-  "United Kingdom": "https://flagcdn.com/w320/gb.png",
-  "Spain": "https://flagcdn.com/w320/es.png",
-  "Italy": "https://flagcdn.com/w320/it.png",
-  "Portugal": "https://flagcdn.com/w320/pt.png",
-  "Netherlands": "https://flagcdn.com/w320/nl.png",
-  "Poland": "https://flagcdn.com/w320/pl.png",
-  "Russia": "https://flagcdn.com/w320/ru.png",
-  "Turkey": "https://flagcdn.com/w320/tr.png",
-  "Arabia": "https://flagcdn.com/w320/sa.png",
-  "Albania": "https://flagcdn.com/w320/al.png",
-  "Croatia": "https://flagcdn.com/w320/hr.png",
-  "Bulgaria": "https://flagcdn.com/w320/bg.png",
-  "Romania": "https://flagcdn.com/w320/ro.png"
-};
 
 /**
  * Maps a Kool.ws live channel to a Stremio catalog meta item.
@@ -89,10 +69,58 @@ export function formatChannelMeta(channel: KoolLiveChannel): StremioMetaItem {
 
 export class LiveProvider {
   /**
-   * Returns catalog items for Stremio live TV.
+   * Returns catalog items for Stremio live TV with optional genre, search and active categories filter.
    */
-  async getCatalog(genre?: string, search?: string): Promise<StremioMetaItem[]> {
-    logger.debug(`LiveProvider.getCatalog - genre: ${genre}, search: ${search}`);
+  async getCatalog(
+    genre?: string,
+    search?: string,
+    userCategories?: string[]
+  ): Promise<StremioMetaItem[]> {
+    logger.debug(
+      `LiveProvider.getCatalog - genre: ${genre || "none"}, search: ${search || "none"}, userCategories: ${
+        userCategories?.length ?? "all"
+      }`
+    );
+
+    // 1. If a specific genre is selected from Nuvio dropdown
+    if (genre) {
+      const channels = await koolClient.getLiveChannels(search, genre);
+      return channels.map(formatChannelMeta);
+    }
+
+    // 2. If a search query is active
+    if (search) {
+      const channels = await koolClient.getLiveChannels(search);
+      if (userCategories && userCategories.length > 0) {
+        const filtered = channels.filter(
+          (c) => !c.tags || c.tags.length === 0 || c.tags.some((t) => userCategories.includes(t))
+        );
+        return filtered.map(formatChannelMeta);
+      }
+      return channels.map(formatChannelMeta);
+    }
+
+    // 3. Default view (Home screen / Board)
+    // If user filtered specific categories, fetch them in parallel and combine
+    if (userCategories && userCategories.length > 0 && userCategories.length < ALL_CATEGORY_IDS.length) {
+      const results = await Promise.all(
+        userCategories.map((cat) => koolClient.getLiveChannels(undefined, cat))
+      );
+      const seen = new Set<string>();
+      const combined: KoolLiveChannel[] = [];
+
+      for (const list of results) {
+        for (const ch of list) {
+          if (!seen.has(ch.id)) {
+            seen.add(ch.id);
+            combined.push(ch);
+          }
+        }
+      }
+      return combined.map(formatChannelMeta);
+    }
+
+    // 4. Default fallback: all channels
     const channels = await koolClient.getLiveChannels(search, genre);
     return channels.map(formatChannelMeta);
   }
