@@ -24,7 +24,7 @@ Ce guide détaille pas à pas les différentes méthodes pour exécuter, tester 
 ### Étapes
 ```bash
 # 1. Cloner le dépôt
-git clone https://github.com/matthieuduga-labs/nuvio-kool.ws.git
+git clone https://github.com/schmitt-maker/nuvio-kool.ws.git
 cd nuvio-kool.ws
 
 # 2. Installer les dépendances
@@ -65,7 +65,7 @@ L'addon est accessible sur `http://localhost:7080/manifest.json`.
 
 Vercel est la méthode la plus simple et 100% gratuite (sans carte bancaire requise) :
 
-1. Votre dépôt est déjà créé sur GitHub : `https://github.com/matthieuduga-labs/nuvio-kool.ws`
+1. Votre dépôt est déjà créé sur GitHub : `https://github.com/schmitt-maker/nuvio-kool.ws`
 2. Rendez-vous sur [vercel.com](https://vercel.com) et connectez-vous avec votre compte GitHub.
 3. Cliquez sur **"Add New Project"** (ou "Import").
 4. Sélectionnez le dépôt `nuvio-kool.ws`.
@@ -84,7 +84,7 @@ Si vous préférez exécuter le conteneur Docker en continu 24h/24 gratuitement 
 
 1. Rendez-vous sur [koyeb.com](https://www.koyeb.com) et connectez-vous avec GitHub.
 2. Cliquez sur **"Create App"**.
-3. Choisissez **GitHub** et sélectionnez `matthieuduga-labs/nuvio-kool.ws`.
+3. Choisissez **GitHub** et sélectionnez `schmitt-maker/nuvio-kool.ws`.
 4. Sélectionnez le builder **Dockerfile**.
 5. Choisissez le plan **Free / Eco (Nano)**.
 6. Cliquez sur **Deploy**. Votre URL sera :
