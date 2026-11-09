@@ -64,6 +64,43 @@ export class KoolClient {
   }
 
   /**
+   * Retrieves detailed information and full EPG for a specific live channel.
+   */
+  async getLiveChannelDetails(channelId: string): Promise<KoolLiveChannel | null> {
+    const numericId = channelId.replace(/^kool:live:/, "");
+    const cacheKey = `live_channel_detail_${numericId}`;
+    const cached = memoryCache.get<KoolLiveChannel>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    try {
+      const endpoint = `${this.baseUrl}/live/item/live/${numericId}.json`;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), config.httpTimeoutMs);
+
+      const resp = await fetch(endpoint, {
+        headers: { "Accept": "application/json" },
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+
+      if (resp.ok) {
+        const channel: KoolLiveChannel = await resp.json();
+        memoryCache.set(cacheKey, channel, config.cache.liveCatalogTtlMs);
+        return channel;
+      }
+    } catch (err: any) {
+      logger.warn(`Error fetching live item ${numericId}: ${err.message}`);
+    }
+
+    // Fallback: search in catalog list
+    const all = await this.getLiveChannels();
+    const found = all.find((c) => c.id === numericId);
+    return found || null;
+  }
+
+  /**
    * Resolves a live TV channel to its playable HLS master playlist URL.
    */
   async resolveLiveChannel(channelPlayUrl: string): Promise<KoolLiveResolveResponse | null> {

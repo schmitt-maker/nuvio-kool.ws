@@ -15,6 +15,17 @@ export interface StremioCatalogDefinition {
   extra?: StremioCatalogExtra[];
 }
 
+export type StremioResource =
+  | "catalog"
+  | "meta"
+  | "stream"
+  | "subtitles"
+  | {
+      name: "catalog" | "meta" | "stream" | "subtitles";
+      types: Array<"movie" | "series" | "tv" | "channel" | "other">;
+      idPrefixes?: string[];
+    };
+
 export interface StremioManifest {
   id: string;
   version: string;
@@ -22,7 +33,7 @@ export interface StremioManifest {
   description: string;
   logo?: string;
   background?: string;
-  resources: Array<"catalog" | "meta" | "stream" | "subtitles">;
+  resources: StremioResource[];
   types: Array<"movie" | "series" | "tv" | "channel" | "other">;
   catalogs: StremioCatalogDefinition[];
   idPrefixes: string[];
@@ -53,6 +64,10 @@ export interface StremioMetaItem {
   description?: string;
   releaseInfo?: string;
   genres?: string[];
+  behaviorHints?: {
+    defaultVideoId?: string;
+    isCinema?: number;
+  };
   videos?: StremioMetaVideo[];
 }
 

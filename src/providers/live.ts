@@ -13,48 +13,54 @@ export function formatChannelMeta(channel: KoolLiveChannel): StremioMetaItem {
 
   if (channel.epg && channel.epg.length > 0) {
     const epgLines: string[] = [];
-    const now = new Date();
 
-    const currentEpg = channel.epg[0];
-    if (currentEpg) {
-      const startTime = new Date(currentEpg.start).toLocaleTimeString("fr-FR", {
+    channel.epg.slice(0, 4).forEach((epg, idx) => {
+      const startTime = new Date(epg.start).toLocaleTimeString("fr-FR", {
         hour: "2-digit",
         minute: "2-digit"
       });
-      const endTime = new Date(currentEpg.end).toLocaleTimeString("fr-FR", {
+      const endTime = new Date(epg.end).toLocaleTimeString("fr-FR", {
         hour: "2-digit",
         minute: "2-digit"
       });
-      epgLines.push(`📺 En direct : ${currentEpg.title} (${startTime} - ${endTime})`);
-    }
 
-    const nextEpg = channel.epg[1];
-    if (nextEpg) {
-      const startTime = new Date(nextEpg.start).toLocaleTimeString("fr-FR", {
-        hour: "2-digit",
-        minute: "2-digit"
-      });
-      epgLines.push(`⏭️ À suivre : ${nextEpg.title} (${startTime})`);
-    }
+      if (idx === 0) {
+        epgLines.push(`📺 En direct : ${epg.title} (${startTime} - ${endTime})`);
+      } else if (idx === 1) {
+        epgLines.push(`⏭️ À suivre : ${epg.title} (${startTime} - ${endTime})`);
+      } else {
+        epgLines.push(`   • ${epg.title} (${startTime})`);
+      }
+    });
 
     if (epgLines.length > 0) {
       description = epgLines.join("\n");
     }
   }
 
-  // Generate poster or placeholder based on country/tag
   const tags = channel.tags || [];
   const primaryTag = tags[0] || "TV";
+  const channelId = `kool:live:${channel.id}`;
 
   return {
-    id: `kool:live:${channel.id}`,
+    id: channelId,
     type: "tv",
     name: channel.name,
     poster: DEFAULT_TV_ICON,
     posterShape: "landscape",
     genres: tags,
     description,
-    releaseInfo: primaryTag
+    releaseInfo: primaryTag,
+    behaviorHints: {
+      defaultVideoId: channelId
+    },
+    videos: [
+      {
+        id: channelId,
+        title: channel.name,
+        released: new Date().toISOString()
+      }
+    ]
   };
 }
 
@@ -72,40 +78,37 @@ export class LiveProvider {
    * Returns metadata for a specific live channel ID.
    */
   async getMeta(channelId: string): Promise<StremioMetaItem | null> {
-    const numericId = channelId.replace("kool:live:", "");
-    const channels = await koolClient.getLiveChannels();
-    const found = channels.find((c) => c.id === numericId);
-    if (!found) {
+    const channel = await koolClient.getLiveChannelDetails(channelId);
+    if (!channel) {
       return null;
     }
-    return formatChannelMeta(found);
+    return formatChannelMeta(channel);
   }
 
   /**
    * Resolves and returns playback stream for a channel.
    */
   async getStream(channelId: string): Promise<StremioStream[]> {
-    const numericId = channelId.replace("kool:live:", "");
-    const channels = await koolClient.getLiveChannels();
-    const found = channels.find((c) => c.id === numericId);
+    const channel = await koolClient.getLiveChannelDetails(channelId);
 
-    if (!found) {
-      logger.warn(`Channel ${channelId} not found in live channels`);
+    if (!channel || !channel.url) {
+      logger.warn(`Channel ${channelId} not found or has no URL`);
       return [];
     }
 
-    const resolved = await koolClient.resolveLiveChannel(found.url);
+    const resolved = await koolClient.resolveLiveChannel(channel.url);
     if (!resolved || !resolved.url) {
-      logger.warn(`Could not resolve stream for channel ${found.name}`);
+      logger.warn(`Could not resolve stream for channel ${channel.name}`);
       return [];
     }
 
-    const currentTitle = found.epg && found.epg[0] ? found.epg[0].title : "En direct";
+    const currentTitle =
+      channel.epg && channel.epg[0] ? channel.epg[0].title : "En direct";
 
     return [
       {
         name: "Kool.ws Live",
-        title: `${found.name}\n▶️ ${currentTitle}`,
+        title: `${channel.name}\n▶️ ${currentTitle}`,
         url: resolved.url,
         behaviorHints: {
           notWebReady: true

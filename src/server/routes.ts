@@ -16,7 +16,23 @@ const manifest: StremioManifest = {
     "300+ Live TV Channels (France, Sport, International) with EPG & Movies / Series sources from Kool.ws",
   logo: "https://img.icons8.com/color/452/dog.png",
   background: "https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85",
-  resources: ["catalog", "meta", "stream"],
+  resources: [
+    {
+      name: "catalog",
+      types: ["tv"],
+      idPrefixes: ["kool:live:"]
+    },
+    {
+      name: "meta",
+      types: ["tv"],
+      idPrefixes: ["kool:live:"]
+    },
+    {
+      name: "stream",
+      types: ["tv", "movie", "series"],
+      idPrefixes: ["kool:live:", "tt", "tmdb:"]
+    }
+  ],
   types: ["tv", "movie", "series"],
   catalogs: [
     {
@@ -108,21 +124,21 @@ stremioRouter.get("/meta/:type/:id.json", async (req: Request, res: Response) =>
   const cleanedId = (rawId || "").replace(/\.json$/, "");
 
   if (type !== "tv" || !cleanedId.startsWith("kool:live:")) {
-    res.status(404).json({ error: "Meta not found" });
+    res.json({ meta: null });
     return;
   }
 
   try {
     const meta = await liveProvider.getMeta(cleanedId);
     if (!meta) {
-      res.status(404).json({ error: "Channel not found" });
+      res.json({ meta: null });
       return;
     }
     res.setHeader("Cache-Control", "max-age=300, public");
     res.json({ meta });
   } catch (err: any) {
     logger.error(`Error in /meta route: ${err.message}`);
-    res.status(500).json({ error: "Internal server error" });
+    res.json({ meta: null });
   }
 });
 
