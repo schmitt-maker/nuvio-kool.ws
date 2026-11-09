@@ -1,8 +1,12 @@
 {
-  "name": "kool.ws-addon",
+  "name": "nuvio-kool.ws",
   "version": "1.0.0",
   "description": "Stremio & Nuvio TV Addon for Kool.ws (Live TV & VOD)",
   "main": "dist/index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/matthieuduga-labs/nuvio-kool.ws.git"
+  },
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",

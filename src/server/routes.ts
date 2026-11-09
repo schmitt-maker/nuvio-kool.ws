@@ -142,11 +142,25 @@ stremioRouter.get("/meta/:type/:id.json", async (req: Request, res: Response) =>
   }
 });
 
+/**
+ * Resolves the public base URL dynamically from the incoming HTTP request
+ * or from the BASE_URL environment variable if set.
+ */
+function getBaseUrl(req: Request): string {
+  if (process.env.BASE_URL) {
+    return process.env.BASE_URL.replace(/\/$/, "");
+  }
+  const host = req.get("host") || `localhost:${config.port}`;
+  const proto = (req.headers["x-forwarded-proto"] as string) || req.protocol || "http";
+  return `${proto}://${host}`;
+}
+
 // 4. Stream routes
 stremioRouter.get("/stream/:type/:id.json", async (req: Request, res: Response) => {
   const type = Array.isArray(req.params.type) ? req.params.type[0] : req.params.type;
   const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const cleanedId = (rawId || "").replace(/\.json$/, "");
+  const baseUrl = getBaseUrl(req);
 
   try {
     if (type === "tv" && cleanedId.startsWith("kool:live:")) {
@@ -157,7 +171,7 @@ stremioRouter.get("/stream/:type/:id.json", async (req: Request, res: Response) 
     }
 
     if (type === "movie" || type === "series") {
-      const streams = await vodProvider.getStreams(type, cleanedId);
+      const streams = await vodProvider.getStreams(type, cleanedId, baseUrl);
       res.setHeader("Cache-Control", "max-age=300, public");
       res.json({ streams });
       return;
@@ -173,6 +187,7 @@ stremioRouter.get("/stream/:type/:id.json", async (req: Request, res: Response) 
 // 5. On-demand VOD resolver & playback endpoint
 stremioRouter.get("/play/vod", async (req: Request, res: Response) => {
   const sourceUrl = req.query.sourceUrl as string;
+  const baseUrl = getBaseUrl(req);
 
   if (!sourceUrl) {
     res.status(400).send("Missing sourceUrl parameter");
@@ -193,7 +208,7 @@ stremioRouter.get("/play/vod", async (req: Request, res: Response) => {
 
     // If stream requires proxy headers (e.g. Referer), redirect to proxy endpoint
     if (resolved.headers && Object.keys(resolved.headers).length > 0) {
-      const proxyUrl = `/proxy/stream?url=${encodeURIComponent(
+      const proxyUrl = `${baseUrl}/proxy/stream?url=${encodeURIComponent(
         resolved.url
       )}&headers=${encodeURIComponent(JSON.stringify(resolved.headers))}`;
       res.redirect(302, proxyUrl);

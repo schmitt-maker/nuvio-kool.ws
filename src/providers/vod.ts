@@ -40,10 +40,15 @@ function getHostName(rawUrl: string): string {
 export class VodProvider {
   /**
    * Generates Stremio streams for a movie or TV series episode.
+   *
+   * @param mediaType "movie" or "series"
+   * @param id IMDb ID (tt...) or TMDB ID (tmdb:...)
+   * @param baseUrl Public base URL of this addon instance
    */
   async getStreams(
     mediaType: "movie" | "series",
-    id: string
+    id: string,
+    baseUrl: string = config.baseUrl
   ): Promise<StremioStream[]> {
     logger.debug(`VodProvider.getStreams - type: ${mediaType}, id: ${id}`);
     const sources = await koolClient.getVodSources(mediaType, id);
@@ -77,7 +82,7 @@ export class VodProvider {
       const title = `${langBadge} ${quality}\n${source.name}${hostLabel}`;
 
       // URL points to our on-demand resolver endpoint
-      const streamUrl = `${config.baseUrl}/play/vod?sourceUrl=${encodeURIComponent(
+      const streamUrl = `${baseUrl}/play/vod?sourceUrl=${encodeURIComponent(
         source.url
       )}`;
 

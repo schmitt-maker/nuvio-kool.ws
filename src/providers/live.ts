@@ -6,6 +6,28 @@ import { logger } from "../utils/logger";
 const DEFAULT_TV_ICON = "https://img.icons8.com/color/452/dog.png";
 
 /**
+ * Flag icons map for TV channel landscape cards
+ */
+const COUNTRY_FLAGS: Record<string, string> = {
+  "France": "https://flagcdn.com/w320/fr.png",
+  "France Sport": "https://flagcdn.com/w320/fr.png",
+  "Germany": "https://flagcdn.com/w320/de.png",
+  "United Kingdom": "https://flagcdn.com/w320/gb.png",
+  "Spain": "https://flagcdn.com/w320/es.png",
+  "Italy": "https://flagcdn.com/w320/it.png",
+  "Portugal": "https://flagcdn.com/w320/pt.png",
+  "Netherlands": "https://flagcdn.com/w320/nl.png",
+  "Poland": "https://flagcdn.com/w320/pl.png",
+  "Russia": "https://flagcdn.com/w320/ru.png",
+  "Turkey": "https://flagcdn.com/w320/tr.png",
+  "Arabia": "https://flagcdn.com/w320/sa.png",
+  "Albania": "https://flagcdn.com/w320/al.png",
+  "Croatia": "https://flagcdn.com/w320/hr.png",
+  "Bulgaria": "https://flagcdn.com/w320/bg.png",
+  "Romania": "https://flagcdn.com/w320/ro.png"
+};
+
+/**
  * Maps a Kool.ws live channel to a Stremio catalog meta item.
  */
 export function formatChannelMeta(channel: KoolLiveChannel): StremioMetaItem {
@@ -41,12 +63,13 @@ export function formatChannelMeta(channel: KoolLiveChannel): StremioMetaItem {
   const tags = channel.tags || [];
   const primaryTag = tags[0] || "TV";
   const channelId = `kool:live:${channel.id}`;
+  const poster = (primaryTag && COUNTRY_FLAGS[primaryTag]) || DEFAULT_TV_ICON;
 
   return {
     id: channelId,
     type: "tv",
     name: channel.name,
-    poster: DEFAULT_TV_ICON,
+    poster,
     posterShape: "landscape",
     genres: tags,
     description,

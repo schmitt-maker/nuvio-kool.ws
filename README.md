@@ -1,105 +1,79 @@
-# Kool.ws Addon pour Nuvio TV & Stremio
+# Nuvio Kool.ws — Stremio & Nuvio TV Addon
 
-Intégration complète et native de [Kool.ws](https://kool.ws) pour **Nuvio TV** (Android TV, Google TV, Fire TV) et **Stremio**.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Node.js](https://img.shields.io/badge/Node.js-18%2B-brightgreen.svg)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/)
+[![Docker Ready](https://img.shields.io/badge/Docker-Ready-2496ED.svg)](Dockerfile)
+[![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97-Hugging%20Face%20Spaces-yellow.svg)](https://huggingface.co/spaces)
 
----
-
-## 🌟 Fonctionnalités
-
-- **Live TV (300+ chaînes en direct)** :
-  - **France & TNT** : TF1 FHD, 6ter, 13ème Rue, 20 Minutes TV, etc.
-  - **France Sport** : DAZN Events 1-18, Ligue 1 FHD, L'Équipe 21, Infosport, etc.
-  - **International** : Chaînes allemandes, britanniques, italiennes, espagnoles, turques, etc.
-  - **Guide électronique des programmes (EPG)** intégré en temps réel (émission actuelle et à suivre).
-  - **Filtrage par pays et catégories** directement dans l'interface Nuvio.
-  - **Recherche rapide** par nom de chaîne (ex: `TF1`, `DAZN`).
-- **Films & Séries (VOD)** :
-  - Intégration transparente avec les métadonnées Cinemeta / TMDB de Nuvio TV.
-  - Récupération des flux vidéo multi-serveurs (Voe, Vidsonic, etc.).
-  - Badges visuels de langue prioritaires : **🇫🇷 FR**, **🇬🇧 EN**, **🇩🇪 DE**.
-  - Résolution dynamique à la demande avec support de l'orchestrateur `clientFetch`.
-  - Mini-proxy de streaming intégré pour garantir la lecture des flux protégés ou tokenisés.
-- **Ergonomie 10-foot (Télécommande)** :
-  - Conçu pour une navigation fluide au D-pad sur grand écran.
-  - Compatible avec les moteurs de lecture natifs **ExoPlayer** et **MPV**.
+Intégration native, propre et performante de **Kool.ws** pour **Nuvio TV** (Android TV, Google TV, Fire TV) et **Stremio**.
 
 ---
 
-## 🚀 Installation rapide
+## 📺 Aperçu des Fonctionnalités
 
-### 1. Démarrage de l'addon
+### 1. Live TV (300+ Chaînes en Direct)
+- **TNT & Chaînes Françaises** : TF1 FHD, 6ter, 13ème Rue, 20 Minutes TV, TMC, TFX, etc.
+- **Sport Français & Européen** : DAZN Events 1 à 18, Ligue 1 FHD, L'Équipe 21, Infosport, etc.
+- **Bouquets Internationaux** : Chaînes britanniques, allemandes, italiennes, espagnoles, turques, etc.
+- **Guide des Programmes (EPG)** intégré en direct (émission actuelle, suivante et horaires sur la fiche de chaque chaîne).
+- **Navigation par Pays / Genre** avec vignettes pays haute définition.
+- **Moteur de Recherche** en texte libre (ex: `TF1`, `DAZN`, `Ligue`).
 
-#### Option A : Avec Node.js
+### 2. Films & Séries (VOD)
+- **Découverte automatique des sources** basée sur les identifiants IMDb (`tt...`) et TMDB.
+- **Tri et badges de langues prioritaires** : **🇫🇷 FR**, **🇬🇧 EN**, **🇩🇪 DE**.
+- **Indication des résolutions** : 1080p, HD, 800p, 4K.
+- **Moteur `clientFetch` récursif** pour résoudre les hébergeurs tiers (Voe, Vidsonic, etc.) sans navigateur lourd.
+- **Mini-proxy de streaming** assurant la continuité des flux protégés par `Referer`.
+
+### 3. Expérience TV Native (10-foot Leanback)
+- Navigation au **D-pad / télécommande** fluide et réactive.
+- Lecture directe via les moteurs matériels natifs de Nuvio TV (**ExoPlayer** et **MPV**).
+- Support de la directive standard `behaviorHints.proxyHeaders`.
+
+---
+
+## ⚡ Démarrage Rapide
+
+### Avec Node.js
 ```bash
-# Installation des dépendances
+# Installation et compilation
 npm install
-
-# Build du projet TypeScript
 npm run build
 
-# Démarrage du serveur
+# Démarrage
 npm start
 ```
-Le serveur démarre par défaut sur `http://localhost:7080` *(le port 7080 évite le conflit avec le récepteur AirPlay de macOS qui occupe le port 7000)*.
+*Le serveur écoute par défaut sur `http://localhost:7080`.*
 
-#### Option B : Avec Docker
+### Avec Docker
 ```bash
 docker compose up -d
 ```
 
----
-
-### 2. Configuration dans Nuvio TV
-
-1. Allumez votre téléviseur et lancez l'application **Nuvio TV**.
-2. Rendez-vous dans **Paramètres (Settings) ➔ Addons ➔ Ajouter un Addon**.
-3. Renseignez l'URL du manifeste de votre addon :
-   ```
-   http://<IP_DE_VOTRE_SERVEUR>:7080/manifest.json
-   ```
-   *(Remplacez `<IP_DE_VOTRE_SERVEUR>` par l'adresse IP locale de votre machine ou NAS, ex: `http://192.168.1.50:7080/manifest.json`)*
-4. Validez : le catalogue **Kool Live TV** apparaît instantanément dans la section Découvrir / Chaînes TV de Nuvio, et les sources VOD sont automatiquement associées aux fiches de films et séries.
+Consultez le fichier **[SETUP.md](SETUP.md)** pour le guide complet de déploiement gratuit sur **Hugging Face Spaces** ou **Vercel**.
 
 ---
 
-## 🛠️ Architecture technique
+## 📡 URL du Manifeste
+
+Une fois le serveur démarré ou hébergé, ajoutez l'URL suivante dans les paramètres de votre application **Nuvio TV** ou **Stremio** :
 
 ```
-kool.ws-addon/
-├── src/
-│   ├── index.ts              # Point d'entrée serveur Express & page d'accueil
-│   ├── config.ts             # Configuration d'environnement (PORT, TTL cache, etc.)
-│   ├── types/
-│   │   ├── kool.ts           # Typage du protocole mHub v2 / MediaHubMX
-│   │   └── stremio.ts        # Typage du protocole Stremio Addon
-│   ├── kool-client/
-│   │   ├── client.ts         # Client HTTP pour l'API Kool.ws
-│   │   └── client-fetch.ts   # Moteur de résolution récursif clientFetch
-│   ├── providers/
-│   │   ├── live.ts           # Transformation du catalogue Live TV & EPG Stremio
-│   │   └── vod.ts            # Fournisseur de flux VOD triés par langue
-│   ├── server/
-│   │   └── routes.ts         # Endpoints Stremio & routeur de lecture proxy
-│   └── utils/
-│       ├── cache.ts          # Cache mémoire TTL haute performance
-│       └── logger.ts         # Journalisation structurée
-├── test/
-│   └── addon.test.ts         # Suite de tests d'intégration complète
-├── Dockerfile                # Image conteneur multi-stage ultra-légère
-└── docker-compose.yml        # Orchestration 1-clic
+http://<VOTRE_HOTE>:7080/manifest.json
 ```
 
 ---
 
-## 🧪 Lancer les tests d'intégration
+## 🧪 Tests d'Intégration
 
-Le projet inclut une suite de tests automatisés validant la connectivité réelle avec Kool.ws :
+Une suite de tests automatisée vérifie en continu la connectivité avec les API de Kool.ws :
 
 ```bash
 npm test
 ```
 
-Résultats attendus :
 ```
 ==========================================
 🧪 Début des tests d'intégration Kool.ws
@@ -119,17 +93,52 @@ Résultats : 8 passés, 0 échoués
 
 ---
 
-## ⚙️ Variables d'environnement
+## 🏗️ Architecture du Projet
 
-| Variable | Valeur par défaut | Description |
+```
+nuvio-kool.ws/
+├── src/
+│   ├── index.ts              # Serveur Express, page d'accueil & gestion des signaux
+│   ├── config.ts             # Ports, timeouts et TTLs de cache
+│   ├── types/
+│   │   ├── kool.ts           # Modélisation du protocole mHub v2 / MediaHubMX
+│   │   └── stremio.ts        # Modélisation du protocole Stremio Addon
+│   ├── kool-client/
+│   │   ├── client.ts         # Client HTTP pour l'API Kool.ws
+│   │   └── client-fetch.ts   # Moteur de résolution distribué clientFetch
+│   ├── providers/
+│   │   ├── live.ts           # Transformation du catalogue Live TV & guide EPG
+│   │   └── vod.ts            # Fournisseur de flux VOD classés par langue
+│   ├── server/
+│   │   └── routes.ts         # Endpoints Stremio & routeur proxy HLS
+│   └── utils/
+│       ├── cache.ts          # Cache mémoire TTL haute performance
+│       └── logger.ts         # Journalisation structurée
+├── test/
+│   └── addon.test.ts         # Suite de tests d'intégration automatisés
+├── api/
+│   └── index.ts              # Adaptateur Serverless pour Vercel
+├── Dockerfile                # Image conteneur multi-stage alpine ultra-légère
+├── docker-compose.yml        # Déploiement en 1 commande
+├── SETUP.md                  # Guide de déploiement pas-à-pas (HF Spaces, Vercel, TV)
+├── LICENSE                   # Licence MIT
+└── README.md
+```
+
+---
+
+## ⚙️ Variables d'Environnement
+
+| Variable | Défaut | Description |
 | :--- | :--- | :--- |
-| `PORT` | `7080` | Port d'écoute du serveur HTTP |
+| `PORT` | `7080` | Port d'écoute HTTP du serveur |
 | `HOST` | `0.0.0.0` | Adresse de liaison réseau |
-| `BASE_URL` | `http://localhost:7080` | URL publique déclarée dans les flux |
-| `KOOL_BASE_URL` | `https://kool.ws` | Point d'accès de l'API Kool.ws |
-| `DEBUG` | `false` | Activer les logs verbeux de débogage |
+| `BASE_URL` | *(Dynamique)* | URL publique de l'addon (auto-détectée si omise) |
+| `KOOL_BASE_URL` | `https://kool.ws` | Point d'accès du service Kool.ws |
+| `DEBUG` | `false` | Affiche les logs verbeux de débogage |
 
 ---
 
 ## 📄 Licence
-MIT
+
+Ce projet est distribué sous licence MIT. Consultez le fichier [LICENSE](LICENSE) pour plus d'informations.
