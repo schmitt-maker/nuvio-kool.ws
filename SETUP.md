@@ -8,8 +8,8 @@ Ce guide détaille pas à pas les différentes méthodes pour exécuter, tester 
 
 1. [Exécution en local (Node.js)](#1-exécution-en-local-nodejs)
 2. [Exécution avec Docker & Docker Compose](#2-exécution-avec-docker--docker-compose)
-3. [Déploiement Gratuit sur Hugging Face Spaces (Recommandé)](#3-déploiement-gratuit-sur-hugging-face-spaces-recommandé)
-4. [Déploiement Gratuit sur Vercel](#4-déploiement-gratuit-sur-vercel)
+3. [Déploiement Gratuit sur Vercel (Recommandé)](#3-déploiement-gratuit-sur-vercel-recommandé)
+4. [Déploiement Gratuit sur Koyeb (Alternative Docker 24/7)](#4-déploiement-gratuit-sur-koyeb-alternative-docker-247)
 5. [Configuration dans Nuvio TV (Android TV / Fire TV)](#5-configuration-dans-nuvio-tv-android-tv--fire-tv)
 6. [Dépannage fréquent](#6-dépannage-fréquent)
 
@@ -61,46 +61,35 @@ L'addon est accessible sur `http://localhost:7080/manifest.json`.
 
 ---
 
-## 3. Déploiement Gratuit sur Hugging Face Spaces (Recommandé)
+## 3. Déploiement Gratuit sur Vercel (Recommandé)
 
-Hugging Face Spaces est la méthode privilégiée par la communauté Stremio :
-- **100% Gratuit à vie** (2 vCPUs, 16 Go de RAM).
-- **Pas de mise en veille** (tourne 24h/24 sans délai de réveil).
-- **Aucun timeout de connexion** (idéal pour le streaming continu).
+Vercel est la méthode la plus simple et 100% gratuite (sans carte bancaire requise) :
 
-### Étapes :
-1. Rendez-vous sur [huggingface.co/spaces](https://huggingface.co/spaces) et créez un compte (gratuit).
-2. Cliquez sur **"Create new Space"** :
-   - **Space name** : `nuvio-koolws` (ou le nom de votre choix).
-   - **License** : MIT.
-   - **Space SDK** : Sélectionnez **Docker** (Blank).
-   - **Space hardware** : Free (CPU basic • 2 vCPU • 16 GB).
-   - **Visibility** : Public.
-3. Cliquez sur **"Create Space"**.
-4. Poussez le code de votre projet vers Hugging Face :
-   ```bash
-   git remote add hf https://huggingface.co/spaces/<votre-pseudo>/nuvio-koolws
-   git push hf main
+1. Votre dépôt est déjà créé sur GitHub : `https://github.com/matthieuduga-labs/nuvio-kool.ws`
+2. Rendez-vous sur [vercel.com](https://vercel.com) et connectez-vous avec votre compte GitHub.
+3. Cliquez sur **"Add New Project"** (ou "Import").
+4. Sélectionnez le dépôt `nuvio-kool.ws`.
+5. Laissez tous les paramètres par défaut (Vercel détecte automatiquement la configuration `vercel.json` et `api/index.ts`).
+6. Cliquez sur **"Deploy"**.
+7. En 30 secondes, votre addon est en ligne avec une URL HTTPS permanente :
    ```
-5. Hugging Face compile automatiquement le Dockerfile en environ 1 minute.
-6. Votre URL publique HTTPS sera :
-   ```
-   https://<votre-pseudo>-nuvio-koolws.hf.space/manifest.json
+   https://nuvio-kool-ws.vercel.app/manifest.json
    ```
 
 ---
 
-## 4. Déploiement Gratuit sur Vercel
+## 4. Déploiement Gratuit sur Koyeb (Alternative Docker 24/7)
 
-Vercel convient pour un déploiement instantané en 1 clic :
+Si vous préférez exécuter le conteneur Docker en continu 24h/24 gratuitement :
 
-1. Poussez votre code sur un dépôt GitHub (ex: `matthieuduga-labs/nuvio-kool.ws`).
-2. Rendez-vous sur [vercel.com](https://vercel.com) et connectez-vous avec GitHub.
-3. Cliquez sur **"Add New Project"** et sélectionnez le dépôt.
-4. Laissez les paramètres par défaut et cliquez sur **"Deploy"**.
-5. Votre URL sera :
+1. Rendez-vous sur [koyeb.com](https://www.koyeb.com) et connectez-vous avec GitHub.
+2. Cliquez sur **"Create App"**.
+3. Choisissez **GitHub** et sélectionnez `matthieuduga-labs/nuvio-kool.ws`.
+4. Sélectionnez le builder **Dockerfile**.
+5. Choisissez le plan **Free / Eco (Nano)**.
+6. Cliquez sur **Deploy**. Votre URL sera :
    ```
-   https://<nom-du-projet>.vercel.app/manifest.json
+   https://<votre-app>.koyeb.app/manifest.json
    ```
 
 ---

@@ -4,7 +4,7 @@
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B-brightgreen.svg)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/)
 [![Docker Ready](https://img.shields.io/badge/Docker-Ready-2496ED.svg)](Dockerfile)
-[![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97-Hugging%20Face%20Spaces-yellow.svg)](https://huggingface.co/spaces)
+[![Vercel Ready](https://img.shields.io/badge/Vercel-Deploy-black.svg)](https://vercel.com)
 
 Intégration native, propre et performante de **Kool.ws** pour **Nuvio TV** (Android TV, Google TV, Fire TV) et **Stremio**.
 
@@ -52,7 +52,7 @@ npm start
 docker compose up -d
 ```
 
-Consultez le fichier **[SETUP.md](SETUP.md)** pour le guide complet de déploiement gratuit sur **Hugging Face Spaces** ou **Vercel**.
+Consultez le fichier **[SETUP.md](SETUP.md)** pour le guide complet de déploiement gratuit sur **Vercel** ou **Koyeb**.
 
 ---
 
