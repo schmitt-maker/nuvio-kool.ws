@@ -40,7 +40,7 @@ npm run build
 # Démarrage du serveur
 npm start
 ```
-Le serveur démarre par défaut sur `http://localhost:7000`.
+Le serveur démarre par défaut sur `http://localhost:7080` *(le port 7080 évite le conflit avec le récepteur AirPlay de macOS qui occupe le port 7000)*.
 
 #### Option B : Avec Docker
 ```bash
@@ -55,9 +55,9 @@ docker compose up -d
 2. Rendez-vous dans **Paramètres (Settings) ➔ Addons ➔ Ajouter un Addon**.
 3. Renseignez l'URL du manifeste de votre addon :
    ```
-   http://<IP_DE_VOTRE_SERVEUR>:7000/manifest.json
+   http://<IP_DE_VOTRE_SERVEUR>:7080/manifest.json
    ```
-   *(Remplacez `<IP_DE_VOTRE_SERVEUR>` par l'adresse IP locale de votre machine ou NAS, ex: `http://192.168.1.50:7000/manifest.json`)*
+   *(Remplacez `<IP_DE_VOTRE_SERVEUR>` par l'adresse IP locale de votre machine ou NAS, ex: `http://192.168.1.50:7080/manifest.json`)*
 4. Validez : le catalogue **Kool Live TV** apparaît instantanément dans la section Découvrir / Chaînes TV de Nuvio, et les sources VOD sont automatiquement associées aux fiches de films et séries.
 
 ---
@@ -123,9 +123,9 @@ Résultats : 8 passés, 0 échoués
 
 | Variable | Valeur par défaut | Description |
 | :--- | :--- | :--- |
-| `PORT` | `7000` | Port d'écoute du serveur HTTP |
+| `PORT` | `7080` | Port d'écoute du serveur HTTP |
 | `HOST` | `0.0.0.0` | Adresse de liaison réseau |
-| `BASE_URL` | `http://localhost:7000` | URL publique déclarée dans les flux |
+| `BASE_URL` | `http://localhost:7080` | URL publique déclarée dans les flux |
 | `KOOL_BASE_URL` | `https://kool.ws` | Point d'accès de l'API Kool.ws |
 | `DEBUG` | `false` | Activer les logs verbeux de débogage |
 

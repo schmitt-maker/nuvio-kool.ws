@@ -13,7 +13,7 @@ FROM node:22-alpine AS runner
 
 WORKDIR /app
 ENV NODE_ENV=production
-ENV PORT=7000
+ENV PORT=7080
 ENV HOST=0.0.0.0
 
 COPY package*.json ./
@@ -21,7 +21,7 @@ RUN npm ci --only=production
 
 COPY --from=builder /app/dist ./dist
 
-EXPOSE 7000
+EXPOSE 7080
 
 USER node
 CMD ["node", "dist/index.js"]

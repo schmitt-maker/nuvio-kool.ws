@@ -4,9 +4,9 @@ services:
     container_name: koolws-addon
     restart: unless-stopped
     ports:
-      - "7000:7000"
+      - "7080:7080"
     environment:
-      - PORT=7000
+      - PORT=7080
       - HOST=0.0.0.0
       # Optionnel: définissez l'URL publique ou l'IP de votre machine sur le réseau local
-      # - BASE_URL=http://192.168.1.50:7000
+      # - BASE_URL=http://192.168.1.50:7080

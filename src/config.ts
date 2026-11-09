@@ -1,7 +1,7 @@
 export const config = {
-  port: parseInt(process.env.PORT || "7000", 10),
+  port: parseInt(process.env.PORT || "7080", 10),
   host: process.env.HOST || "0.0.0.0",
-  baseUrl: process.env.BASE_URL || `http://localhost:${process.env.PORT || "7000"}`,
+  baseUrl: process.env.BASE_URL || `http://localhost:${process.env.PORT || "7080"}`,
   koolBaseUrl: process.env.KOOL_BASE_URL || "https://kool.ws",
   cache: {
     liveCatalogTtlMs: 10 * 60 * 1000,   // 10 minutes
